@@ -18,6 +18,8 @@ import (
 )
 
 func TestNewOrdererGroup(t *testing.T) {
+	t.Parallel()
+
 	tests := []struct {
 		ordererType           string
 		configMetadata        *etcdraft.ConfigMetadata
@@ -31,6 +33,8 @@ func TestNewOrdererGroup(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.ordererType, func(t *testing.T) {
+			t.Parallel()
+
 			gt := NewGomegaWithT(t)
 
 			ordererConf := &Orderer{
@@ -71,7 +75,7 @@ func TestNewOrdererGroup(t *testing.T) {
 				gt.Expect(err).To(MatchError(tt.err))
 				return
 			}
-			gt.Expect(err).ToNot(HaveOccurred())
+			gt.Expect(err).NotTo(HaveOccurred())
 
 			// Orderer group checks
 			gt.Expect(len(ordererGroup.Groups)).To(Equal(2))
@@ -117,6 +121,8 @@ func TestNewOrdererGroup(t *testing.T) {
 }
 
 func TestNewOrdererGroupFailure(t *testing.T) {
+	t.Parallel()
+
 	tests := []struct {
 		testName   string
 		ordererMod func(*Orderer)
@@ -127,7 +133,7 @@ func TestNewOrdererGroupFailure(t *testing.T) {
 			ordererMod: func(o *Orderer) {
 				o.Policies = nil
 			},
-			err: errors.New("error adding policies to orderer group: no policies defined"),
+			err: errors.New("error adding policies: no policies defined"),
 		},
 		{
 			testName: "When marshalling etcdraft metadata for orderer group",
@@ -156,7 +162,7 @@ func TestNewOrdererGroupFailure(t *testing.T) {
 					},
 				}
 			},
-			err: errors.New("cannot marshal metadata for orderer type etcdraft: cannot load client cert for consenter " +
+			err: errors.New("cannot marshal etcdraft metadata for orderer type etcdraft: cannot load client cert for consenter " +
 				"node-1.example.com:7050: open testdata/tls-client-1.pem: no such file or directory"),
 		},
 		{
@@ -164,7 +170,7 @@ func TestNewOrdererGroupFailure(t *testing.T) {
 			ordererMod: func(o *Orderer) {
 				o.OrdererType = "ConsensusTypeGreen"
 			},
-			err: errors.New("unknown orderer type, ConsensusTypeGreen"),
+			err: errors.New("unknown orderer type ConsensusTypeGreen"),
 		},
 		{
 			testName: "When EtcdRaft config is not set for consensus type etcdraft",
@@ -172,19 +178,21 @@ func TestNewOrdererGroupFailure(t *testing.T) {
 				o.OrdererType = ConsensusTypeEtcdRaft
 				o.EtcdRaft = nil
 			},
-			err: errors.New("EtcdRaft not set for consensus type etcdraft"),
+			err: errors.New("missing etcdraft metadata for orderer type etcdraft"),
 		},
 		{
 			testName: "When adding policies to orderer org group",
 			ordererMod: func(o *Orderer) {
 				o.Organizations[0].Policies = nil
 			},
-			err: errors.New("failed to create orderer org Org1: error adding policies to orderer org group Org1: no policies defined"),
+			err: errors.New("could not create orderer org group Org1: error adding policies: no policies defined"),
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.testName, func(t *testing.T) {
+			t.Parallel()
+
 			gt := NewGomegaWithT(t)
 
 			ordererConf := baseOrderer()
@@ -192,10 +200,8 @@ func TestNewOrdererGroupFailure(t *testing.T) {
 
 			mspConfig := &msp.MSPConfig{}
 			ordererGroup, err := NewOrdererGroup(ordererConf, mspConfig)
-			gt.Expect(err).To(HaveOccurred())
-			gt.Expect(err).To(MatchError(tt.err))
 			gt.Expect(ordererGroup).To(BeNil())
-
+			gt.Expect(err).To(MatchError(tt.err))
 		})
 	}
 }

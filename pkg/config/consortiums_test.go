@@ -15,6 +15,8 @@ import (
 )
 
 func TestNewConsortiumsGroup(t *testing.T) {
+	t.Parallel()
+
 	gt := NewGomegaWithT(t)
 	consortiums := map[string]*Consortium{
 		"Consortium1": {
@@ -68,6 +70,8 @@ func TestNewConsortiumsGroup(t *testing.T) {
 }
 
 func TestNewConsortiumsGroupFailure(t *testing.T) {
+	t.Parallel()
+
 	gt := NewGomegaWithT(t)
 	mspConfig := &msp.MSPConfig{}
 	consortiums := map[string]*Consortium{
@@ -82,12 +86,15 @@ func TestNewConsortiumsGroupFailure(t *testing.T) {
 	}
 
 	consortiumsGroup, err := NewConsortiumsGroup(consortiums, mspConfig)
-	gt.Expect(err).To(HaveOccurred())
 	gt.Expect(consortiumsGroup).To(BeNil())
-	gt.Expect(err).To(MatchError("error adding policies to consortium org group Org1: no policies defined"))
+	gt.Expect(err).To(MatchError("could not create consortium group: " +
+		"could not create consortium org group Org1: " +
+		"error adding policies: no policies defined"))
 }
 
 func TestSkipAsForeignForConsortiumOrg(t *testing.T) {
+	t.Parallel()
+
 	gt := NewGomegaWithT(t)
 	mspConfig := &msp.MSPConfig{}
 	consortiums := map[string]*Consortium{
@@ -109,7 +116,7 @@ func TestSkipAsForeignForConsortiumOrg(t *testing.T) {
 
 	// returns a consortiums group with consortium groups that have empty consortium org groups with only mod policy
 	consortiumsGroup, err := NewConsortiumsGroup(consortiums, mspConfig)
-	gt.Expect(err).ToNot(HaveOccurred())
+	gt.Expect(err).NotTo(HaveOccurred())
 	gt.Expect(consortiumsGroup.Groups["Consortium1"].Groups["Org1"]).To(Equal(&common.ConfigGroup{
 		ModPolicy: AdminsPolicyKey,
 		Groups:    make(map[string]*common.ConfigGroup),

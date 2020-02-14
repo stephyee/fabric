@@ -15,6 +15,8 @@ import (
 )
 
 func TestCreateChannelTx(t *testing.T) {
+	t.Parallel()
+
 	gt := NewGomegaWithT(t)
 
 	profile := baseProfile()
@@ -28,6 +30,8 @@ func TestCreateChannelTx(t *testing.T) {
 }
 
 func TestCreateChannelTxFailure(t *testing.T) {
+	t.Parallel()
+
 	tests := []struct {
 		testName   string
 		profileMod func() *Profile
@@ -40,7 +44,7 @@ func TestCreateChannelTxFailure(t *testing.T) {
 				profile.Policies = nil
 				return &profile
 			},
-			err: errors.New("could not generate default config template: error adding policies to channel group: " +
+			err: errors.New("could not generate default config template: error adding policies: " +
 				"no policies defined"),
 		},
 		{
@@ -48,7 +52,7 @@ func TestCreateChannelTxFailure(t *testing.T) {
 			profileMod: func() *Profile {
 				return nil
 			},
-			err: errors.New("failed to create channel tx because profile is empty"),
+			err: errors.New("profile is empty"),
 		},
 		{
 			testName: "When channel ID is not specified in config",
@@ -57,12 +61,14 @@ func TestCreateChannelTxFailure(t *testing.T) {
 				profile.ChannelID = ""
 				return &profile
 			},
-			err: errors.New("failed to create channel tx because channel ID is empty"),
+			err: errors.New("channel ID is empty"),
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.testName, func(t *testing.T) {
+			t.Parallel()
+
 			gt := NewGomegaWithT(t)
 
 			mspConfig := &msp.FabricMSPConfig{}

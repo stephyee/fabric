@@ -9,7 +9,7 @@ package config
 import "math"
 
 const (
-	// These values are fixed for the genesis block.
+	// These values are fixed for the genesis block
 	msgVersion = 0
 	epoch      = 0
 

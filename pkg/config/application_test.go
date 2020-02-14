@@ -16,6 +16,7 @@ import (
 )
 
 func TestNewApplicationGroup(t *testing.T) {
+	t.Parallel()
 
 	gt := NewGomegaWithT(t)
 
@@ -24,7 +25,7 @@ func TestNewApplicationGroup(t *testing.T) {
 	application := baseApplication()
 
 	applicationGroup, err := NewApplicationGroup(application, mspConfig)
-	gt.Expect(err).ToNot(HaveOccurred())
+	gt.Expect(err).NotTo(HaveOccurred())
 	gt.Expect(len(applicationGroup.Policies)).To(Equal(5))
 	gt.Expect(applicationGroup.Policies["Admins"]).NotTo(BeNil())
 	gt.Expect(applicationGroup.Policies["Readers"]).NotTo(BeNil())
@@ -38,6 +39,8 @@ func TestNewApplicationGroup(t *testing.T) {
 }
 
 func TestNewApplicationGroupFailure(t *testing.T) {
+	t.Parallel()
+
 	tests := []struct {
 		testName       string
 		applicationMod func(*Application)
@@ -48,20 +51,21 @@ func TestNewApplicationGroupFailure(t *testing.T) {
 			applicationMod: func(a *Application) {
 				a.Policies = nil
 			},
-			expectedErr: errors.New("error adding policies to application group: no policies defined"),
+			expectedErr: errors.New("error adding policies: no policies defined"),
 		},
 		{
 			testName: "When adding policies to application group",
 			applicationMod: func(a *Application) {
 				a.Organizations[0].Policies = nil
 			},
-			expectedErr: errors.New("failed to create application org Org1: error adding policies" +
-				" to application org group Org1: no policies defined"),
+			expectedErr: errors.New("could not create application org group Org1: error adding policies: " +
+				"no policies defined"),
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.testName, func(t *testing.T) {
+			t.Parallel()
 
 			gt := NewGomegaWithT(t)
 
@@ -70,7 +74,6 @@ func TestNewApplicationGroupFailure(t *testing.T) {
 			tt.applicationMod(application)
 
 			configGrp, err := NewApplicationGroup(application, mspConfig)
-			gt.Expect(err).To(HaveOccurred())
 			gt.Expect(configGrp).To(BeNil())
 			gt.Expect(err).To(MatchError(tt.expectedErr))
 		})
@@ -78,7 +81,10 @@ func TestNewApplicationGroupFailure(t *testing.T) {
 }
 
 func TestNewApplicationGroupSkipAsForeign(t *testing.T) {
+	t.Parallel()
+
 	gt := NewGomegaWithT(t)
+
 	application := &Application{
 		Policies: createStandardPolicies(),
 		Organizations: []*Organization{
@@ -98,7 +104,7 @@ func TestNewApplicationGroupSkipAsForeign(t *testing.T) {
 	mspConfig := &msp.MSPConfig{}
 
 	applicationGroup, err := NewApplicationGroup(application, mspConfig)
-	gt.Expect(err).ToNot(HaveOccurred())
+	gt.Expect(err).NotTo(HaveOccurred())
 	gt.Expect(applicationGroup.Groups["Org1"]).To(Equal(&common.ConfigGroup{
 		ModPolicy: AdminsPolicyKey,
 		Groups:    make(map[string]*common.ConfigGroup),

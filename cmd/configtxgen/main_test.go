@@ -8,7 +8,6 @@ package main
 
 import (
 	"flag"
-	"fmt"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -100,8 +99,6 @@ func TestGenerateAnchorPeersUpdate(t *testing.T) {
 	configTxDest := filepath.Join(tmpDir, "anchorPeerUpdate")
 
 	config := genesisconfig.Load(genesisconfig.SampleSingleMSPChannelProfile, configtest.GetDevConfigDir())
-
-	fmt.Printf("!!COCONUT %v", config)
 
 	assert.NoError(t, doOutputAnchorPeersUpdate(config, "foo", configTxDest, genesisconfig.SampleOrgName), "Good anchorPeerUpdate request")
 }
