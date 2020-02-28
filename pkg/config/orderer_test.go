@@ -45,7 +45,7 @@ func TestNewOrdererGroup(t *testing.T) {
 
 			mspConfig := &mb.MSPConfig{}
 
-			ordererGroup, err := NewOrdererGroup(ordererConf, mspConfig)
+			ordererGroup, err := newOrdererGroup(ordererConf, mspConfig)
 			gt.Expect(err).NotTo(HaveOccurred())
 
 			// OrdererGroup checks
@@ -173,7 +173,7 @@ func TestNewOrdererGroupFailure(t *testing.T) {
 
 			mspConfig := &mb.MSPConfig{}
 
-			ordererGroup, err := NewOrdererGroup(ordererConf, mspConfig)
+			ordererGroup, err := newOrdererGroup(ordererConf, mspConfig)
 			gt.Expect(err).To(MatchError(tt.err))
 			gt.Expect(ordererGroup).To(BeNil())
 		})
@@ -189,7 +189,7 @@ func TestUpdateOrdererConfiguration(t *testing.T) {
 
 	mspConfig := &mb.MSPConfig{}
 
-	ordererGroup, err := NewOrdererGroup(baseOrdererConf, mspConfig)
+	ordererGroup, err := newOrdererGroup(baseOrdererConf, mspConfig)
 	gt.Expect(err).NotTo(HaveOccurred())
 
 	originalOrdererAddresses, err := proto.Marshal(&cb.OrdererAddresses{

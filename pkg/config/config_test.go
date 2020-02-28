@@ -550,6 +550,7 @@ func TestCreateSignedConfigUpdateEnvelopeFailures(t *testing.T) {
 		ChannelId: "testchannel",
 	}
 	configSignature, err := SignConfigUpdate(configUpdate, signingIdentity)
+
 	gt.Expect(err).NotTo(HaveOccurred())
 
 	tests := []struct {

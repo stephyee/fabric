@@ -14,8 +14,8 @@ import (
 	pb "github.com/hyperledger/fabric-protos-go/peer"
 )
 
-// Application encodes the application-level configuration needed in config
-// transactions.
+// Application is a copy of the order configuration with the addition of an anchor peers
+// list in the organization defintion.
 type Application struct {
 	Organizations []*Organization
 	Capabilities  map[string]bool
@@ -24,15 +24,15 @@ type Application struct {
 	ACLs          map[string]string
 }
 
-// AnchorPeer encodes the necessary fields to identify an anchor peer.
+// AnchorPeer defines the location of peers for each application organization.
 type AnchorPeer struct {
 	Host string
 	Port int
 }
 
 // NewApplicationGroup returns the application component of the channel configuration.
-// By default, tt sets the mod_policy of all elements to "Admins".
-func NewApplicationGroup(application *Application, mspConfig *mb.MSPConfig) (*cb.ConfigGroup, error) {
+// By default, it sets the mod_policy of all elements to "Admins".
+func newApplicationGroup(application *Application, mspConfig *mb.MSPConfig) (*cb.ConfigGroup, error) {
 	var err error
 
 	applicationGroup := newConfigGroup()
