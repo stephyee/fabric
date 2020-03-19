@@ -568,6 +568,96 @@ func AddRootCAToMSP(config *cb.Config, rootCA *x509.Certificate, orgName string)
 	return nil
 }
 
+// UpdateMSP updates the MSP for the provided config application org group
+func UpdateMSP(config *cb.Config, updatedMSP MSP, orgName string) error {
+	currentMSP, err := GetMSPConfigurationForApplicationOrg(config, orgName)
+	if err != nil {
+		return fmt.Errorf("failed retrieving msp: %v", err)
+	}
+
+	if currentMSP.Name != updatedMSP.Name {
+		return errors.New("MSP name cannot be changed")
+	}
+
+	err = validateMSPCACerts(updatedMSP)
+	if err != nil {
+		return err
+	}
+
+	err = setMSPConfigForOrg(config, updatedMSP, orgName)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func setMSPConfigForOrg(config *cb.Config, updatedMSP MSP, orgName string) error {
+	fabricMSPConfig, err := updatedMSP.toProto()
+	if err != nil {
+		return err
+	}
+
+	conf, err := proto.Marshal(fabricMSPConfig)
+	if err != nil {
+		return fmt.Errorf("marshaling msp config: %v", err)
+	}
+
+	mspConfig := &mb.MSPConfig{
+		Config: conf,
+	}
+
+	orgGroup, err := getApplicationOrg(config, orgName)
+	if err != nil {
+		return err
+	}
+
+	err = addValue(orgGroup, mspValue(mspConfig), AdminsPolicyKey)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func validateMSPCACerts(msp MSP) error {
+	err := validateCACerts(msp.RootCerts)
+	if err != nil {
+		return fmt.Errorf("invalid root cert: %v", err)
+	}
+
+	err = validateCACerts(msp.IntermediateCerts)
+	if err != nil {
+		return fmt.Errorf("invalid intermediate cert: %v", err)
+	}
+
+	err = validateCACerts(msp.TLSRootCerts)
+	if err != nil {
+		return fmt.Errorf("invalid tls root cert: %v", err)
+	}
+
+	err = validateCACerts(msp.TLSIntermediateCerts)
+	if err != nil {
+		return fmt.Errorf("invalid tls intermediate cert: %v", err)
+	}
+
+	return nil
+}
+
+func validateCACerts(caCerts []x509.Certificate) error {
+	for _, caCert := range caCerts {
+		if (caCert.KeyUsage & x509.KeyUsageCertSign) == 0 {
+			return fmt.Errorf("SerialNumber %d: KeyUsage must be x509.KeyUsageCertSign", caCert.SerialNumber)
+		}
+
+		if !caCert.IsCA {
+			return fmt.Errorf("SerialNumber %d: must be a CA certificate", caCert.SerialNumber)
+		}
+	}
+
+	return nil
+}
+
 func getFabricMSPConfig(org *cb.ConfigGroup) (*mb.FabricMSPConfig, error) {
 	configValue, err := getOrgMSPValue(org)
 	if err != nil {
