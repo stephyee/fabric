@@ -13,6 +13,7 @@ import (
 	"os"
 	"path/filepath"
 	"testing"
+	"time"
 
 	"github.com/hyperledger/fabric/common/ledger/blockledger/fileledger/mock"
 	"github.com/hyperledger/fabric/common/metrics/disabled"
@@ -27,19 +28,19 @@ type fileLedgerBlockStore interface {
 }
 
 func TestBlockStoreProviderErrors(t *testing.T) {
-	setup := func(fileRepo *filerepo.Repo) (*fileLedgerFactory, *mock.BlockStoreProvider) {
+	setup := func() (*fileLedgerFactory, *mock.BlockStoreProvider) {
 		m := &mock.BlockStoreProvider{}
 
 		f := &fileLedgerFactory{
 			blkstorageProvider: m,
 			ledgers:            map[string]*FileLedger{},
-			removeFileRepo:     fileRepo,
+			toBeRemoved:        map[string]bool{},
 		}
 		return f, m
 	}
 
 	t.Run("list", func(t *testing.T) {
-		f, mockBlockStoreProvider := setup(nil)
+		f, mockBlockStoreProvider := setup()
 		mockBlockStoreProvider.ListReturns(nil, errors.New("boogie"))
 		require.PanicsWithValue(
 			t,
@@ -50,42 +51,11 @@ func TestBlockStoreProviderErrors(t *testing.T) {
 	})
 
 	t.Run("open", func(t *testing.T) {
-		f, mockBlockStoreProvider := setup(nil)
+		f, mockBlockStoreProvider := setup()
 		mockBlockStoreProvider.OpenReturns(nil, errors.New("woogie"))
 		_, err := f.GetOrCreate("foo")
 		require.EqualError(t, err, "woogie")
 		require.Empty(t, f.ledgers, "Expected no new ledger is created")
-	})
-
-	t.Run("remove", func(t *testing.T) {
-		dir, err := ioutil.TempDir("", "fileledger")
-		require.NoError(t, err, "Error creating temp dir: %s", err)
-		defer os.RemoveAll(dir)
-		fileRepo, err := filerepo.New(filepath.Join(dir, "filerepo"), "remove")
-		require.NoError(t, err, "Error creating temp file repo: %s", err)
-
-		t.Run("ledger doesn't exist", func(t *testing.T) {
-			f, mockBlockStoreProvider := setup(fileRepo)
-			err := f.Remove("foo")
-			require.NoError(t, err)
-			require.Equal(t, 1, mockBlockStoreProvider.DropCallCount())
-			channelID := mockBlockStoreProvider.DropArgsForCall(0)
-			require.Equal(t, "foo", channelID)
-		})
-
-		t.Run("dropping the blockstore fails", func(t *testing.T) {
-			f, mockBlockStoreProvider := setup(fileRepo)
-			mockBlockStore := &mock.FileLedgerBlockStore{}
-			f.ledgers["bar"] = &FileLedger{blockStore: mockBlockStore}
-			mockBlockStoreProvider.DropReturns(errors.New("oogie"))
-
-			err := f.Remove("bar")
-			require.EqualError(t, err, "oogie")
-			require.Equal(t, 1, mockBlockStore.ShutdownCallCount())
-			require.Equal(t, 1, mockBlockStoreProvider.DropCallCount())
-			channelID := mockBlockStoreProvider.DropArgsForCall(0)
-			require.Equal(t, "bar", channelID)
-		})
 	})
 }
 
@@ -132,10 +102,9 @@ func TestMultiReinitialization(t *testing.T) {
 
 	err = f.Remove("bar")
 	require.NoError(t, err, "Error removing channel")
-	require.Equal(t, 2, len(f.ChannelIDs()))
+	require.Eventually(t, func() bool { return len(f.ChannelIDs()) == 2 }, time.Minute, time.Second)
 	err = f.Remove("this-isnt-an-existing-channel")
-	require.NoError(t, err, "Error removing channel")
-	require.Equal(t, 2, len(f.ChannelIDs()))
+	require.Eventually(t, func() bool { return len(f.ChannelIDs()) == 2 }, time.Minute, time.Second)
 
 	_, err = os.Stat(bar2ChainsDir)
 	require.EqualError(t, err, fmt.Sprintf("stat %s: no such file or directory", bar2ChainsDir))
@@ -188,6 +157,36 @@ func TestNewErrors(t *testing.T) {
 }
 
 func TestRemove(t *testing.T) {
+	dir, err := ioutil.TempDir("", "fileledger")
+	require.NoError(t, err, "Error creating temp dir: %s", err)
+	defer os.RemoveAll(dir)
+
+	metricsProvider := &disabled.Provider{}
+	f, err := New(dir, metricsProvider)
+	require.NoError(t, err)
+	defer f.Close()
+
+	t.Run("success", func(t *testing.T) {
+		_, err = f.GetOrCreate("foo")
+		require.NoError(t, err, "Error creating channel")
+		require.Equal(t, 1, len(f.ChannelIDs()), "Expected 1 channel to exist")
+		dest := filepath.Join(dir, "filerepo", "remove", "foo.remove")
+		err = f.Remove("foo")
+		require.NoError(t, err, "Error removing channel")
+
+		_, err = os.Stat(dest)
+		require.EqualError(t, err, fmt.Sprintf("stat %s: no such file or directory", dest))
+	})
+
+	t.Run("ledger doesn't exist", func(t *testing.T) {
+		err := f.Remove("ree")
+		require.NoError(t, err)
+
+		require.NotContains(t, f.ChannelIDs(), "ree")
+	})
+}
+
+func TestRemoveErrors(t *testing.T) {
 	mockBlockStore := &mock.BlockStoreProvider{}
 	dir, err := ioutil.TempDir("", "fileledger")
 	require.NoError(t, err, "Error creating temp dir: %s", err)
@@ -199,32 +198,25 @@ func TestRemove(t *testing.T) {
 		blkstorageProvider: mockBlockStore,
 		ledgers:            map[string]*FileLedger{},
 		removeFileRepo:     fileRepo,
+		toBeRemoved:        map[string]bool{},
 	}
 	defer f.Close()
 
-	t.Run("success", func(t *testing.T) {
-		dest := filepath.Join(dir, "filerepo", "remove", "foo.remove")
-		mockBlockStore.DropCalls(func(string) error {
-			_, err = os.Stat(dest)
-			require.NoError(t, err, "Expected foo.remove to exist")
-			return nil
-		})
-		err = f.Remove("foo")
-		require.NoError(t, err, "Error removing channel")
-		require.Equal(t, 1, mockBlockStore.DropCallCount(), "Expected 1 Drop() calls")
+	t.Run("remove is already in-progress", func(t *testing.T) {
+		f.toBeRemoved["yee"] = true
 
-		_, err = os.Stat(dest)
-		require.EqualError(t, err, fmt.Sprintf("stat %s: no such file or directory", dest))
+		err := f.Remove("yee")
+		require.NoError(t, err, "Expected no error")
+		require.Equal(t, f.toBeRemoved["yee"], true)
 	})
 
-	t.Run("drop fails", func(t *testing.T) {
+	t.Run("drop the blockstore fails", func(t *testing.T) {
 		mockBlockStore.DropReturns(errors.New("oogie"))
 		err = f.Remove("foo")
-		require.EqualError(t, err, "oogie")
+		require.NoError(t, err, "Expected no error")
+		require.Eventually(t, func() bool { return mockBlockStore.DropCallCount() == 1 }, time.Minute, time.Second)
 
-		dest := filepath.Join(dir, "filerepo", "remove", "foo.remove")
-		_, err = os.Stat(dest)
-		require.NoError(t, err, "Expected foo.remove to exist")
+		require.Equal(t, f.toBeRemoved["foo"], false)
 	})
 
 	t.Run("saving to file repo fails", func(t *testing.T) {

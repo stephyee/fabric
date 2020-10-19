@@ -30,6 +30,8 @@ type fileLedgerFactory struct {
 	ledgers            map[string]*FileLedger
 	mutex              sync.Mutex
 	removeFileRepo     *filerepo.Repo
+	toBeRemoved        map[string]bool
+	removeMutex        sync.RWMutex
 }
 
 // GetOrCreate gets an existing ledger (if it exists) or creates it
@@ -54,10 +56,17 @@ func (f *fileLedgerFactory) GetOrCreate(channelID string) (blockledger.ReadWrite
 }
 
 // Remove removes an existing ledger and its indexes. This operation
-// is blocking.
+// performs an async deletion.
 func (f *fileLedgerFactory) Remove(channelID string) error {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
+
+	f.removeMutex.RLock()
+	defer f.removeMutex.RUnlock()
+	current, exists := f.toBeRemoved[channelID]
+	if exists && current {
+		return nil
+	}
 
 	// check cache for open blockstore and, if one exists,
 	// shut it down in order to avoid resource contention
@@ -70,10 +79,18 @@ func (f *fileLedgerFactory) Remove(channelID string) error {
 		return err
 	}
 
-	err := f.blkstorageProvider.Drop(channelID)
-	if err != nil {
-		return err
-	}
+	go func() {
+		f.removeMutex.Lock()
+		defer f.removeMutex.Unlock()
+		f.toBeRemoved[channelID] = true
+		err := f.blkstorageProvider.Drop(channelID)
+		if err != nil {
+			logger.Info(err.Error())
+			f.toBeRemoved[channelID] = false
+			return
+		}
+		delete(f.toBeRemoved, channelID)
+	}()
 
 	delete(f.ledgers, channelID)
 
@@ -119,6 +136,7 @@ func New(directory string, metricsProvider metrics.Provider) (blockledger.Factor
 		blkstorageProvider: p,
 		ledgers:            map[string]*FileLedger{},
 		removeFileRepo:     fileRepo,
+		toBeRemoved:        map[string]bool{},
 	}
 
 	files, err := factory.removeFileRepo.List()
