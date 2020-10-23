@@ -18,7 +18,7 @@ type Factory interface {
 	GetOrCreate(channelID string) (ReadWriter, error)
 
 	// Remove removes an existing ledger
-	Remove(channelID string, deletionCleanup func(string)) error
+	Remove(channelID string, finishRemove func(string)) error
 
 	// ChannelIDs returns the channel IDs the Factory is aware of
 	ChannelIDs() []string

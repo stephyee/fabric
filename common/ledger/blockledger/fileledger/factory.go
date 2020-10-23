@@ -55,7 +55,7 @@ func (f *fileLedgerFactory) GetOrCreate(channelID string) (blockledger.ReadWrite
 
 // Remove removes an existing ledger and its indexes. This operation
 // performs an async deletion.
-func (f *fileLedgerFactory) Remove(channelID string, deletionStatus func(string)) error {
+func (f *fileLedgerFactory) Remove(channelID string, finishRemove func(string)) error {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -76,7 +76,7 @@ func (f *fileLedgerFactory) Remove(channelID string, deletionStatus func(string)
 			logger.Info(err.Error())
 			return
 		}
-		deletionStatus(channelID)
+		finishRemove(channelID)
 	}()
 
 	delete(f.ledgers, channelID)
