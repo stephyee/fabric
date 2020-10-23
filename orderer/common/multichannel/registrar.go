@@ -122,23 +122,6 @@ func NewRegistrar(
 	return r
 }
 
-func (r *Registrar) removalCleanup() error {
-	files, err := r.removeFileRepo.List()
-	if len(files) != 0 {
-		for _, fileName := range files {
-			channelID := r.removeFileRepo.FileToBaseName(fileName)
-			r.pendingRemoval[channelID] = true
-			err = r.ledgerFactory.Remove(channelID, r.removeChannelFromPendingRemovals)
-			if err != nil {
-				logger.Errorf("Failed to remove channel %s: %s", channelID, err.Error())
-				return err
-			}
-			logger.Infof("Removed channel: %s", channelID)
-		}
-	}
-	return nil
-}
-
 // InitFileRepos initialize the channel participation API joinblock and remove file repos. This creates
 // the fileRepoDir on the filesystem if it does not already exist.
 func InitFileRepos(config *localconfig.TopLevel) (*filerepo.Repo, *filerepo.Repo, error) {
@@ -1092,4 +1075,21 @@ func (r *Registrar) removeChannelFromPendingRemovals(channelID string) {
 	r.lock.Lock()
 	defer r.lock.Unlock()
 	delete(r.pendingRemoval, channelID)
+}
+
+func (r *Registrar) removalCleanup() error {
+	files, err := r.removeFileRepo.List()
+	if len(files) != 0 {
+		for _, fileName := range files {
+			channelID := r.removeFileRepo.FileToBaseName(fileName)
+			r.pendingRemoval[channelID] = true
+			err = r.ledgerFactory.Remove(channelID, r.removeChannelFromPendingRemovals)
+			if err != nil {
+				logger.Errorf("Failed to remove channel %s: %s", channelID, err.Error())
+				return err
+			}
+			logger.Infof("Removed channel: %s", channelID)
+		}
+	}
+	return nil
 }
