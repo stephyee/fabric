@@ -108,7 +108,7 @@ func NewRegistrar(
 
 	if config.ChannelParticipation.Enabled {
 		var err error
-		r.joinBlockFileRepo, r.removeFileRepo, err = InitJoinBlockFileRepo(&r.config)
+		r.joinBlockFileRepo, r.removeFileRepo, err = InitFileRepos(&r.config)
 		if err != nil {
 			logger.Panicf("Error initializing joinblock file repo: %s", err)
 		}
@@ -139,9 +139,9 @@ func (r *Registrar) removalCleanup() error {
 	return nil
 }
 
-// InitJoinBlockFileRepo initialize the channel participation API joinblock file repo. This creates
+// InitFileRepos initialize the channel participation API joinblock and remove file repos. This creates
 // the fileRepoDir on the filesystem if it does not already exist.
-func InitJoinBlockFileRepo(config *localconfig.TopLevel) (*filerepo.Repo, *filerepo.Repo, error) {
+func InitFileRepos(config *localconfig.TopLevel) (*filerepo.Repo, *filerepo.Repo, error) {
 	fileRepoDir := filepath.Join(config.FileLedger.Location, "filerepo")
 	logger.Infof("Channel Participation API enabled, registrar initializing with file repo %s", fileRepoDir)
 

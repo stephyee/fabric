@@ -333,7 +333,7 @@ func TestInitSystemChannelWithJoinBlock(t *testing.T) {
 		ledgerFactory, err = createLedgerFactory(config, &disabled.Provider{})
 		require.NoError(t, err)
 
-		fileRepo, removeFileRepo, err = multichannel.InitJoinBlockFileRepo(config)
+		fileRepo, removeFileRepo, err = multichannel.InitFileRepos(config)
 		require.NoError(t, err)
 		require.NotNil(t, fileRepo)
 		require.NotNil(t, removeFileRepo)
