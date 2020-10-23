@@ -149,7 +149,7 @@ func (r *Registrar) Initialize(consenters map[string]consensus.Consenter) {
 	r.startChannels()
 }
 
-func (r *Registrar) init(consenters map[string]consensus.Consenter, sysChannel string) {
+func (r *Registrar) init(consenters map[string]consensus.Consenter, systemChannelID string) {
 	r.consenters = consenters
 
 	// Discover and load join-blocks. If there is a join-block, there must be a ledger; if there is none, create it.
@@ -158,15 +158,15 @@ func (r *Registrar) init(consenters map[string]consensus.Consenter, sysChannel s
 
 	// Discover all ledgers. This should already include all channels with join blocks as well.
 	// Make sure there are no empty ledgers without a corresponding join-block.
-	existingChannels := r.discoverLedgers(channelsWithJoinBlock, sysChannel)
+	existingChannels := r.discoverLedgers(channelsWithJoinBlock, systemChannelID)
 
 	// Scan for and initialize the system channel, if it exists.
 	// Note that there may be channels with empty ledgers, but always with a join block.
-	r.initSystemChannel(existingChannels, sysChannel)
+	r.initSystemChannel(existingChannels, systemChannelID)
 
 	// Initialize application channels, by creating either a consensus.Chain or a follower.Chain.
 	if r.systemChannelID == "" {
-		r.initAppChannels(existingChannels, channelsWithJoinBlock, sysChannel)
+		r.initAppChannels(existingChannels, channelsWithJoinBlock, systemChannelID)
 	} else {
 		r.initAppChannelsWhenSystemChannelExists(existingChannels)
 	}
@@ -188,12 +188,12 @@ func (r *Registrar) startChannels() {
 	}
 }
 
-func (r *Registrar) discoverLedgers(channelsWithJoinBlock map[string]*cb.Block, sysChannel string) []string {
+func (r *Registrar) discoverLedgers(channelsWithJoinBlock map[string]*cb.Block, systemChannelID string) []string {
 	// Discover all ledgers. This should already include all channels with join blocks as well.
 	existingChannels := r.ledgerFactory.ChannelIDs()
 
 	for _, channelID := range existingChannels {
-		if channelID == sysChannel {
+		if channelID == systemChannelID {
 			continue
 		}
 		rl, err := r.ledgerFactory.GetOrCreate(channelID)
@@ -214,9 +214,9 @@ func (r *Registrar) discoverLedgers(channelsWithJoinBlock map[string]*cb.Block, 
 }
 
 // initSystemChannel scan for and initialize the system channel, if it exists.
-func (r *Registrar) initSystemChannel(existingChannels []string, sysChannel string) {
+func (r *Registrar) initSystemChannel(existingChannels []string, systemChannelID string) {
 	for _, channelID := range existingChannels {
-		if channelID == sysChannel {
+		if channelID == systemChannelID {
 			continue
 		}
 
@@ -718,6 +718,11 @@ func (r *Registrar) JoinChannel(channelID string, configBlock *cb.Block, isAppCh
 	r.lock.RLock()
 	defer r.lock.RUnlock()
 
+	removalStatus, ok := r.pendingRemoval[channelID]
+	if removalStatus && ok {
+		return types.ChannelInfo{}, types.ErrChannelNotExist
+	}
+
 	if r.systemChannelID != "" {
 		return types.ChannelInfo{}, types.ErrSystemChannelExists
 	}
@@ -739,6 +744,7 @@ func (r *Registrar) JoinChannel(channelID string, configBlock *cb.Block, isAppCh
 			r.pendingRemoval[channelID] = true
 			if err2 := r.ledgerFactory.Remove(channelID, r.removeChannelFromPendingRemovals); err2 != nil {
 				logger.Warningf("Failed to cleanup ledger: %v", err2)
+				r.pendingRemoval[channelID] = false
 			}
 		}
 	}()
@@ -916,6 +922,11 @@ func (r *Registrar) RemoveChannel(channelID string) error {
 		return r.removeSystemChannel()
 	}
 
+	removalState, ok := r.pendingRemoval[channelID]
+	if removalState && ok {
+		return types.ErrChannelNotExist
+	}
+
 	cs, ok := r.chains[channelID]
 	if ok {
 		cs.Halt()
@@ -935,6 +946,7 @@ func (r *Registrar) removeMember(channelID string, cs *ChainSupport) error {
 	r.pendingRemoval[channelID] = true
 	err := r.ledgerFactory.Remove(channelID, r.removeChannelFromPendingRemovals)
 	if err != nil {
+		r.pendingRemoval[channelID] = false
 		return errors.Errorf("error removing ledger for channel %s", channelID)
 	}
 
@@ -960,6 +972,7 @@ func (r *Registrar) removeFollower(channelID string, follower *follower.Chain) e
 	r.pendingRemoval[channelID] = true
 	err := r.ledgerFactory.Remove(channelID, r.removeChannelFromPendingRemovals)
 	if err != nil {
+		r.pendingRemoval[channelID] = false
 		return errors.Errorf("error removing ledger for channel %s", channelID)
 	}
 
@@ -1053,6 +1066,7 @@ func (r *Registrar) removeSystemChannel() error {
 	r.pendingRemoval[systemChannelID] = true
 	err := r.ledgerFactory.Remove(systemChannelID, r.removeChannelFromPendingRemovals)
 	if err != nil {
+		r.pendingRemoval[systemChannelID] = false
 		return errors.WithMessagef(err, "error removing ledger for system channel %s", r.systemChannelID)
 	}
 
@@ -1071,10 +1085,13 @@ func (r *Registrar) removeSystemChannel() error {
 	return nil
 }
 
-func (r *Registrar) removeChannelFromPendingRemovals(channelID string) {
+func (r *Registrar) removeChannelFromPendingRemovals(channelID string, isSuccess bool) {
 	r.lock.Lock()
 	defer r.lock.Unlock()
-	delete(r.pendingRemoval, channelID)
+	if isSuccess {
+		delete(r.pendingRemoval, channelID)
+	}
+	r.pendingRemoval[channelID] = false
 }
 
 func (r *Registrar) removalCleanup() error {
@@ -1086,6 +1103,7 @@ func (r *Registrar) removalCleanup() error {
 			err = r.ledgerFactory.Remove(channelID, r.removeChannelFromPendingRemovals)
 			if err != nil {
 				logger.Errorf("Failed to remove channel %s: %s", channelID, err.Error())
+				r.pendingRemoval[channelID] = false
 				return err
 			}
 			logger.Infof("Removed channel: %s", channelID)

@@ -125,7 +125,7 @@ func TestRemove(t *testing.T) {
 		require.NoError(t, err, "Error creating channel")
 		require.Equal(t, 1, len(f.ChannelIDs()), "Expected 1 channel to exist")
 		dest := filepath.Join(dir, "filerepo", "remove", "foo.remove")
-		err = f.Remove("foo", func(string) {})
+		err = f.Remove("foo", func(string, bool) {})
 		require.NoError(t, err, "Error removing channel")
 
 		_, err = os.Stat(dest)
@@ -133,7 +133,7 @@ func TestRemove(t *testing.T) {
 	})
 
 	t.Run("ledger doesn't exist", func(t *testing.T) {
-		err := f.Remove("ree", func(string) {})
+		err := f.Remove("ree", func(string, bool) {})
 		require.NoError(t, err)
 
 		require.NotContains(t, f.ChannelIDs(), "ree")
@@ -157,14 +157,14 @@ func TestRemoveErrors(t *testing.T) {
 
 	t.Run("drop the blockstore fails", func(t *testing.T) {
 		mockBlockStore.DropReturns(errors.New("oogie"))
-		err = f.Remove("foo", func(string) {})
+		err = f.Remove("foo", func(string, bool) {})
 		require.NoError(t, err, "Expected no error")
 		require.Eventually(t, func() bool { return mockBlockStore.DropCallCount() == 1 }, time.Minute, time.Second)
 	})
 
 	t.Run("saving to file repo fails", func(t *testing.T) {
 		os.RemoveAll(dir)
-		err = f.Remove("foo", func(string) {})
+		err = f.Remove("foo", func(string, bool) {})
 		require.EqualError(t, err, fmt.Sprintf("error while creating file:%s/filerepo/remove/foo.remove~: open %s/filerepo/remove/foo.remove~: no such file or directory", dir, dir))
 	})
 }

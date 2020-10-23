@@ -21,11 +21,11 @@ type Factory struct {
 		result1 blockledger.ReadWriter
 		result2 error
 	}
-	RemoveStub        func(channelID string, finishRemove func(string)) error
+	RemoveStub        func(channelID string, finishRemove func(string, bool)) error
 	removeMutex       sync.RWMutex
 	removeArgsForCall []struct {
 		channelID    string
-		finishRemove func(string)
+		finishRemove func(string, bool)
 	}
 	removeReturns struct {
 		result1 error
@@ -100,12 +100,12 @@ func (fake *Factory) GetOrCreateReturnsOnCall(i int, result1 blockledger.ReadWri
 	}{result1, result2}
 }
 
-func (fake *Factory) Remove(channelID string, finishRemove func(string)) error {
+func (fake *Factory) Remove(channelID string, finishRemove func(string, bool)) error {
 	fake.removeMutex.Lock()
 	ret, specificReturn := fake.removeReturnsOnCall[len(fake.removeArgsForCall)]
 	fake.removeArgsForCall = append(fake.removeArgsForCall, struct {
 		channelID    string
-		finishRemove func(string)
+		finishRemove func(string, bool)
 	}{channelID, finishRemove})
 	fake.recordInvocation("Remove", []interface{}{channelID, finishRemove})
 	fake.removeMutex.Unlock()
@@ -124,7 +124,7 @@ func (fake *Factory) RemoveCallCount() int {
 	return len(fake.removeArgsForCall)
 }
 
-func (fake *Factory) RemoveArgsForCall(i int) (string, func(string)) {
+func (fake *Factory) RemoveArgsForCall(i int) (string, func(string, bool)) {
 	fake.removeMutex.RLock()
 	defer fake.removeMutex.RUnlock()
 	return fake.removeArgsForCall[i].channelID, fake.removeArgsForCall[i].finishRemove
