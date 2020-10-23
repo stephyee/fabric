@@ -306,11 +306,11 @@ func TestInitSystemChannelWithJoinBlock(t *testing.T) {
 	defer os.Remove(genesisFile)
 
 	var (
-		config         *localconfig.TopLevel
-		cryptoProvider bccsp.BCCSP
-		ledgerFactory  blockledger.Factory
-		fileRepo       *filerepo.Repo
-		genesisBytes   []byte
+		config                   *localconfig.TopLevel
+		cryptoProvider           bccsp.BCCSP
+		ledgerFactory            blockledger.Factory
+		fileRepo, removeFileRepo *filerepo.Repo
+		genesisBytes             []byte
 	)
 
 	setup := func() func() {
@@ -333,9 +333,10 @@ func TestInitSystemChannelWithJoinBlock(t *testing.T) {
 		ledgerFactory, err = createLedgerFactory(config, &disabled.Provider{})
 		require.NoError(t, err)
 
-		fileRepo, err = multichannel.InitJoinBlockFileRepo(config)
+		fileRepo, removeFileRepo, err = multichannel.InitJoinBlockFileRepo(config)
 		require.NoError(t, err)
 		require.NotNil(t, fileRepo)
+		require.NotNil(t, removeFileRepo)
 
 		genesisBytes, err = ioutil.ReadFile(genesisFile)
 		require.NoError(t, err)

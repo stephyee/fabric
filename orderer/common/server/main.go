@@ -298,7 +298,7 @@ func initSystemChannelWithJoinBlock(
 		return nil
 	}
 
-	joinBlockFileRepo, err := multichannel.InitJoinBlockFileRepo(config)
+	joinBlockFileRepo, _, err := multichannel.InitJoinBlockFileRepo(config)
 	if err != nil {
 		logger.Panicf("Failed initializing join-block file repo: %v", err)
 	}
@@ -351,7 +351,7 @@ func discardSystemChannelJoinBlock(
 	if err != nil {
 		logger.Panicf("Failed to extract system channel name from join-block: %s", err)
 	}
-	joinBlockFileRepo, err := multichannel.InitJoinBlockFileRepo(config)
+	joinBlockFileRepo, _, err := multichannel.InitJoinBlockFileRepo(config)
 	if err != nil {
 		logger.Panicf("Failed initializing join-block file repo: %v", err)
 	}

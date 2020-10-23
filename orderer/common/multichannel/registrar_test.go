@@ -265,9 +265,9 @@ func TestNewRegistrar(t *testing.T) {
 			types.ChannelInfo{Name: "testchannelid", URL: "", ClusterRelation: "none", Status: "active", Height: 1},
 			info,
 		)
-
 		testMessageOrderAndRetrieval(confSys.Orderer.BatchSize.MaxMessageCount, "testchannelid", chainSupport, rl, t)
 	})
+
 }
 
 func TestRegistrar_Initialize(t *testing.T) {
@@ -541,6 +541,11 @@ func TestNewRegistrarWithFileRepo(t *testing.T) {
 		_, err = lf.GetOrCreate("my-other-cft-channel")
 		require.NoError(t, err)
 
+		// Create existing ledger in remove file repo
+		removeFileRepoDir := filepath.Join(tmpdir, "filerepo", "remove", "oldchannel.remove")
+		_, err = os.Create(removeFileRepoDir)
+		require.NoError(t, err, "Error creating temp file: %s", err)
+
 		config := localconfig.TopLevel{
 			ChannelParticipation: localconfig.ChannelParticipation{Enabled: true},
 			FileLedger:           localconfig.FileLedger{Location: tmpdir},
@@ -565,7 +570,13 @@ func TestNewRegistrarWithFileRepo(t *testing.T) {
 			},
 			list.Channels,
 		)
+
+		// Confirm the remove file was deleted
+		_, err = os.Stat(removeFileRepoDir)
+		require.EqualError(t, err, fmt.Sprintf("stat %s: no such file or directory", removeFileRepoDir))
+
 	})
+
 }
 
 type joinBlock struct {
@@ -1026,6 +1037,7 @@ func TestRegistrar_JoinChannel(t *testing.T) {
 			require.EqualError(t, err, "failed to determine cluster membership from join-block: apple")
 
 			// After join failure, check that everything has been cleaned up
+			require.Eventually(t, func() bool { return len(ledgerFactory.ChannelIDs()) == 0 }, time.Minute, time.Second)
 			require.Empty(t, ledgerFactory.ChannelIDs())
 			joinBlockPath := filepath.Join(tmpdir, "filerepo", "joinblock", "my-raft-channel.joinblock")
 			_, err = os.Stat(joinBlockPath)
@@ -1049,7 +1061,8 @@ func TestRegistrar_JoinChannel(t *testing.T) {
 			require.EqualError(t, err, "failed to create chain support: error creating consenter for channel: my-raft-channel: banana")
 
 			// After join failure, check that everything has been cleaned up
-			require.Empty(t, ledgerFactory.ChannelIDs())
+			// require.Empty(t, ledgerFactory.ChannelIDs())
+			require.Eventually(t, func() bool { return len(ledgerFactory.ChannelIDs()) == 0 }, time.Minute, time.Second)
 			joinBlockPath := filepath.Join(tmpdir, "filerepo", "joinblock", "my-raft-channel.joinblock")
 			_, err = os.Stat(joinBlockPath)
 			require.True(t, os.IsNotExist(err))
@@ -1472,6 +1485,7 @@ func TestRegistrar_RemoveChannel(t *testing.T) {
 
 			// After removing the channel, it no longer exists in the registrar or the ledger
 			require.Nil(t, registrar.GetChain("my-raft-channel"))
+			require.Eventually(t, func() bool { return len(ledgerFactory.ChannelIDs()) == 0 }, time.Minute, time.Second)
 			require.NotContains(t, ledgerFactory.ChannelIDs(), "my-raft-channel")
 		})
 
@@ -1498,6 +1512,7 @@ func TestRegistrar_RemoveChannel(t *testing.T) {
 			require.Nil(t, registrar.GetFollower("my-follower-raft-channel"))
 			_, err = registrar.ChannelInfo("my-follower-raft-channel")
 			require.EqualError(t, err, "channel does not exist")
+			require.Eventually(t, func() bool { return len(ledgerFactory.ChannelIDs()) == 0 }, time.Minute, time.Second)
 			require.NotContains(t, ledgerFactory.ChannelIDs(), "my-follower-raft-channel")
 		})
 	})
@@ -1529,11 +1544,12 @@ func TestRegistrar_RemoveChannel(t *testing.T) {
 
 		err := registrar.RemoveChannel("raft-sys-channel")
 		require.NoError(t, err)
-
+		//
 		// After removing the system channel, it no longer exists in the registrar or the ledger
 		require.Empty(t, registrar.SystemChannelID())
 		require.Nil(t, registrar.SystemChannel())
 		require.Nil(t, registrar.GetChain("raft-sys-channel"))
+		require.Eventually(t, func() bool { return len(ledgerFactory.ChannelIDs()) == 1 }, time.Minute, time.Second)
 		require.NotContains(t, ledgerFactory.ChannelIDs(), "raft-sys-channel")
 
 		// application channel members still exist
