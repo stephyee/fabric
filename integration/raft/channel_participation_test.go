@@ -629,6 +629,7 @@ var _ = Describe("ChannelParticipation", func() {
 			network.Bootstrap()
 		})
 
+		// HERE
 		It("joins channels using the legacy channel creation mechanism and then removes the system channel to transition to the channel participation API", func() {
 			orderer1 := network.Orderer("orderer1")
 			orderer2 := network.Orderer("orderer2")

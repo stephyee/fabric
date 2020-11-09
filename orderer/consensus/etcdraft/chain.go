@@ -457,6 +457,7 @@ func (c *Chain) halt() {
 		return
 	}
 	if c.haltCallback != nil {
+		c.logger.Infof("TSH halt: %s", c.channelID)
 		c.haltCallback() // Must be invoked WITHOUT any internal lock
 
 		c.statusReportMutex.Lock()

@@ -688,12 +688,14 @@ func (r *Registrar) ChannelInfo(channelID string) (types.ChannelInfo, error) {
 	info := types.ChannelInfo{Name: channelID}
 
 	if c, ok := r.chains[channelID]; ok {
+		logger.Infof("TSH r.chains %s", channelID)
 		info.Height = c.Height()
 		info.ClusterRelation, info.Status = c.StatusReport()
 		return info, nil
 	}
 
 	if f, ok := r.followers[channelID]; ok {
+		logger.Infof("TSH r.followers %s", channelID)
 		info.Height = f.Height()
 		info.ClusterRelation, info.Status = f.StatusReport()
 		return info, nil
