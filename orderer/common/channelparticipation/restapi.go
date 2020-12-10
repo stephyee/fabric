@@ -80,10 +80,17 @@ func NewHTTPHandler(config localconfig.ChannelParticipation, registrar ChannelMa
 	//   required: true
 	//   type: string
 	// responses:
-	//    "200":
+	//    '200':
 	//       description: Successfully retrieved channel.
 	//       schema:
 	//         "$ref": "#/definitions/channelInfo"
+	//       headers:
+	//        Content-Type:
+	//          description: The media type of the resource
+	//          type: string
+	//        Cache-Control:
+	//         description: The directives for caching responses
+	//         type: string
 
 	handler.router.HandleFunc(urlWithChannelIDKey, handler.serveListOne).Methods(http.MethodGet)
 
@@ -115,10 +122,17 @@ func NewHTTPHandler(config localconfig.ChannelParticipation, registrar ChannelMa
 	// ---
 	// summary: Returns the complete list of channels an Ordering Service Node (OSN) has joined.
 	// responses:
-	//    "200":
-	//       description: Successfully retrieved channel.
+	//    '200':
+	//       description: Successfully retrieved channels.
 	//       schema:
 	//         "$ref": "#/definitions/channelList"
+	//       headers:
+	//        Content-Type:
+	//          description: The media type of the resource
+	//          type: string
+	//        Cache-Control:
+	//         description: The directives for caching responses
+	//         type: string
 
 	handler.router.HandleFunc(URLBaseV1Channels, handler.serveListAll).Methods(http.MethodGet)
 
@@ -129,11 +143,20 @@ func NewHTTPHandler(config localconfig.ChannelParticipation, registrar ChannelMa
 	// parameters:
 	// - name: configBlock
 	//   in: formData
-	//   description: up-to-date config block for the channel.
+	//   type: string
 	//   required: true
 	// responses:
 	//    '201':
 	//      description: Successfully joined channel.
+	//      schema:
+	//        "$ref": "#/definitions/channelInfo"
+	//      headers:
+	//       Content-Type:
+	//         description: The media type of the resource
+	//         type: string
+	//       Location:
+	//        description: The URL to redirect a page to
+	//        type: string
 	//    '400':
 	//      description: Cannot join channel.
 	//    '403':

@@ -29,9 +29,19 @@
         "operationId": "listChannels",
         "responses": {
           "200": {
-            "description": "Successfully retrieved channel.",
+            "description": "Successfully retrieved channels.",
             "schema": {
               "$ref": "#/definitions/channelList"
+            },
+            "headers": {
+              "Cache-Control": {
+                "type": "string",
+                "description": "The directives for caching responses"
+              },
+              "Content-Type": {
+                "type": "string",
+                "description": "The media type of the resource"
+              }
             }
           }
         }
@@ -45,7 +55,7 @@
         "operationId": "joinChannel",
         "parameters": [
           {
-            "description": "up-to-date config block for the channel.",
+            "type": "string",
             "name": "configBlock",
             "in": "formData",
             "required": true
@@ -53,7 +63,20 @@
         ],
         "responses": {
           "201": {
-            "description": "Successfully joined channel."
+            "description": "Successfully joined channel.",
+            "schema": {
+              "$ref": "#/definitions/channelInfo"
+            },
+            "headers": {
+              "Content-Type": {
+                "type": "string",
+                "description": "The media type of the resource"
+              },
+              "Location": {
+                "type": "string",
+                "description": "The URL to redirect a page to"
+              }
+            }
           },
           "400": {
             "description": "Cannot join channel."
@@ -94,6 +117,16 @@
             "description": "Successfully retrieved channel.",
             "schema": {
               "$ref": "#/definitions/channelInfo"
+            },
+            "headers": {
+              "Cache-Control": {
+                "type": "string",
+                "description": "The directives for caching responses"
+              },
+              "Content-Type": {
+                "type": "string",
+                "description": "The media type of the resource"
+              }
             }
           }
         }
@@ -155,7 +188,7 @@
           "operations"
         ],
         "summary": "Retrieves the active logging spec for a peer or orderer.",
-        "operationId": "logspec",
+        "operationId": "logspecget",
         "responses": {
           "200": {
             "description": "Ok."
@@ -167,16 +200,14 @@
           "operations"
         ],
         "summary": "Updates the active logging spec for a peer or orderer.",
-        "operationId": "logspec",
+        "operationId": "logspecput",
         "parameters": [
           {
+            "type": "string",
             "description": "The payload must consist of a single attribute named spec.",
             "name": "payload",
-            "in": "body",
-            "required": true,
-            "schema": {
-              "$ref": "#/definitions/spec"
-            }
+            "in": "formData",
+            "required": true
           }
         ],
         "responses": {
