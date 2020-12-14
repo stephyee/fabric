@@ -22,11 +22,11 @@ General:
     TLS:
         Enabled: false
         # PrivateKey governs the file location of the private key of the TLS certificate.
-        PrivateKey: /Users/tiffanyharris/code/go/src/github.com/hyperledger/fabric/crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/tls/server.key 
+        PrivateKey: /Users/tiffanyharris/code/go/src/github.com/hyperledger/fabric/demo/config/crypto/ordererOrganizations/example.com/orderers/orderer1.example.com/tls/server.key 
         # Certificate governs the file location of the server TLS certificate.
-        Certificate: /Users/tiffanyharris/code/go/src/github.com/hyperledger/fabric/crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/tls/server.crt
+        Certificate: /Users/tiffanyharris/code/go/src/github.com/hyperledger/fabric/demo/config/crypto/ordererOrganizations/example.com/orderers/orderer1.example.com/tls/server.crt
         RootCAs:
-          - /Users/tiffanyharris/code/go/src/github.com/hyperledger/fabric/crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/tls/ca.crt
+          - /Users/tiffanyharris/code/go/src/github.com/hyperledger/fabric/demo/config/crypto/ordererOrganizations/example.com/orderers/orderer1.example.com/tls/ca.crt
         ClientAuthRequired: false
         ClientRootCAs:
     # Keepalive settings for the GRPC server.
@@ -49,14 +49,14 @@ General:
         SendBufferSize: 10
         # ClientCertificate governs the file location of the client TLS certificate
         # used to establish mutual TLS connections with other ordering service nodes.
-        ClientCertificate: /Users/tiffanyharris/code/go/src/github.com/hyperledger/fabric/crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/tls/server.crt
+        ClientCertificate: /Users/tiffanyharris/code/go/src/github.com/hyperledger/fabric/demo/config/crypto/ordererOrganizations/example.com/orderers/orderer1.example.com/tls/server.crt
         # ClientPrivateKey governs the file location of the private key of the client TLS certificate.
-        ClientPrivateKey: /Users/tiffanyharris/code/go/src/github.com/hyperledger/fabric/crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/tls/server.key
+        ClientPrivateKey: /Users/tiffanyharris/code/go/src/github.com/hyperledger/fabric/demo/config/crypto/ordererOrganizations/example.com/orderers/orderer1.example.com/tls/server.key
         # ServerCertificate defines the file location of the server TLS certificate used for intra-cluster
         # communication.
-        ServerCertificate: /Users/tiffanyharris/code/go/src/github.com/hyperledger/fabric/crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/tls/server.crt
+        ServerCertificate: /Users/tiffanyharris/code/go/src/github.com/hyperledger/fabric/demo/config/crypto/ordererOrganizations/example.com/orderers/orderer1.example.com/tls/server.crt
         # ServerPrivateKey defines the file location of the private key of the TLS certificate.
-        ServerPrivateKey: /Users/tiffanyharris/code/go/src/github.com/hyperledger/fabric/crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/tls/server.key
+        ServerPrivateKey: /Users/tiffanyharris/code/go/src/github.com/hyperledger/fabric/demo/config/crypto/ordererOrganizations/example.com/orderers/orderer1.example.com/tls/server.key
 
         # The below 4 properties should be either set together, or be unset together.
         # If they are set, then the orderer node uses a separate listener for intra-cluster
@@ -88,7 +88,7 @@ General:
     # LocalMSPDir is where to find the private crypto material needed by the
     # orderer. It is set relative here as a default for dev environments but
     # should be changed to the real location in production.
-    LocalMSPDir: /Users/tiffanyharris/code/go/src/github.com/hyperledger/fabric/crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/msp
+    LocalMSPDir: /Users/tiffanyharris/code/go/src/github.com/hyperledger/fabric/demo/config/crypto/ordererOrganizations/example.com/orderers/orderer1.example.com/msp
 
     # LocalMSPID is the identity to register the local MSP material with the MSP
     # manager. IMPORTANT: The local MSP ID of an orderer needs to match the MSP
@@ -156,7 +156,7 @@ General:
 FileLedger:
 
     # Location: The directory to store the blocks in.
-    Location: /Users/tiffanyharris/code/go/src/github.com/hyperledger/fabric/crypto-config/ordererOrganizations/example.com/orderers/OrdererOrg.orderer1/system
+    Location: /Users/tiffanyharris/code/go/src/github.com/hyperledger/fabric/demo/config/crypto/ordererOrganizations/example.com/orderers/OrdererOrg.orderer1/system
 
 ################################################################################
 #
@@ -297,10 +297,10 @@ Operations:
         Enabled: true
 
         # Certificate is the location of the PEM encoded TLS certificate
-        Certificate: /Users/tiffanyharris/code/go/src/github.com/hyperledger/fabric/crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/tls/server.crt
+        Certificate: /Users/tiffanyharris/code/go/src/github.com/hyperledger/fabric/demo/config/crypto/ordererOrganizations/example.com/orderers/orderer1.example.com/tls/server.crt
 
         # PrivateKey points to the location of the PEM-encoded key
-        PrivateKey: /Users/tiffanyharris/code/go/src/github.com/hyperledger/fabric/crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/tls/server.key
+        PrivateKey: /Users/tiffanyharris/code/go/src/github.com/hyperledger/fabric/demo/config/crypto/ordererOrganizations/example.com/orderers/orderer1.example.com/tls/server.key
 
         # Most operations service endpoints require client authentication when TLS
         # is enabled. ClientAuthRequired requires client certificate authentication
@@ -309,7 +309,7 @@ Operations:
 
         # Paths to PEM encoded ca certificates to trust for client authentication
         ClientRootCAs: 
-        -  /Users/tiffanyharris/code/go/src/github.com/hyperledger/fabric/crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/tls/ca.crt
+        -  /Users/tiffanyharris/code/go/src/github.com/hyperledger/fabric/demo/config/crypto/ordererOrganizations/example.com/orderers/orderer1.example.com/tls/ca.crt
 
 ################################################################################
 #
@@ -354,10 +354,10 @@ Admin:
         Enabled: true
 
         # Certificate is the location of the PEM encoded TLS certificate
-        Certificate: /Users/tiffanyharris/code/go/src/github.com/hyperledger/fabric/crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/tls/server.crt
+        Certificate: /Users/tiffanyharris/code/go/src/github.com/hyperledger/fabric/demo/config/crypto/ordererOrganizations/example.com/orderers/orderer1.example.com/tls/server.crt
 
         # PrivateKey points to the location of the PEM-encoded key
-        PrivateKey: /Users/tiffanyharris/code/go/src/github.com/hyperledger/fabric/crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/tls/server.key
+        PrivateKey: /Users/tiffanyharris/code/go/src/github.com/hyperledger/fabric/demo/config/crypto/ordererOrganizations/example.com/orderers/orderer1.example.com/tls/server.key
 
         # Most admin service endpoints require client authentication when TLS
         # is enabled. ClientAuthRequired requires client certificate authentication
@@ -366,7 +366,7 @@ Admin:
 
         # Paths to PEM encoded ca certificates to trust for client authentication
         ClientRootCAs:
-        -  /Users/tiffanyharris/code/go/src/github.com/hyperledger/fabric/crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/tls/ca.crt
+        -  /Users/tiffanyharris/code/go/src/github.com/hyperledger/fabric/demo/config/crypto/ordererOrganizations/example.com/orderers/orderer1.example.com/tls/ca.crt
 
 ################################################################################
 #
@@ -399,9 +399,10 @@ Consensus:
 
     # WALDir specifies the location at which Write Ahead Logs for etcd/raft are
     # stored. Each channel will have its own subdir named after channel ID.
-    WALDir: /Users/tiffanyharris/code/go/src/github.com/hyperledger/fabric/crypto-config/ordererOrganizations/example.com/orderers/OrdererOrg.orderer1/etcdraft/wal
+    WALDir: /Users/tiffanyharris/code/go/src/github.com/hyperledger/fabric/demo/config/crypto/ordererOrganizations/example.com/orderers/OrdererOrg.orderer1/etcdraft/wal
 
     # SnapDir specifies the location at which snapshots for etcd/raft are
     # stored. Each channel will have its own subdir named after channel ID.
-    SnapDir: /Users/tiffanyharris/code/go/src/github.com/hyperledger/fabric/crypto-config/ordererOrganizations/example.com/orderers/OrdererOrg.orderer1/etcdraft/snapshot
+    SnapDir: /Users/tiffanyharris/code/go/src/github.com/hyperledger/fabric/demo/config/crypto/ordererOrganizations/example.com/orderers/OrdererOrg.orderer1/etcdraft/snapshot
+
 

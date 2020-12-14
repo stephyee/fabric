@@ -1,0 +1,32 @@
+How to generate client
+
+Cherry-pick the tls artifacts from the channel participation demo (otherwise these can be generated [See docs](https://hyperledger-fabric.readthedocs.io/en/latest/create_channel/create_channel_participation.html?highlight=osnadmin%20join#create-the-ordering-organization-msp-and-generate-ordering-node-certificates))
+
+Update the orderer.yaml 
+Update ChannelParticipation.Enabled to true
+Update the Operations TLS section
+Update the Admin TLS section
+
+Start the orderer
+FABRIC_CFG_PATH=$FABRIC/demo/config/orderers/OrdererOrg.orderer1 orderer
+
+Generate the client
+swagger-codegen generate -i /Users/tiffanyharris/code/go/src/github.com/hyperledger/fabric/swagger/swagger-fabric.json -l go -o $FABRIC/swagger/client
+
+Use the client to GET Channels
+See main.go
+
+Do similar commands with osnadmin to compare results (Supplements)
+
+osnadmin channel list -o 127.0.0.1:26504 --ca-file $FABRIC/demo/config/crypto/ordererOrganizations/example.com/orderers/orderer1.example.com/tls/ca.crt --client-cert $FABRIC/demo/config/crypto/ordererOrganizations/example.com/orderers/orderer1.example.com/tls/server.crt --client-key $FABRIC/demo/config/crypto/ordererOrganizations/example.com/orderers/orderer1.example.com/tls/server.key
+
+Supplements
+// application channel genesis block
+FABRIC_CFG_PATH=$FABRIC/demo/config configtxgen -outputBlock $FABRIC/demo/participation-trophy-genesis-block.pb -profile EtcdRaftAppChannel -channelID participation-trophy
+
+// orderer1 commands
+osnadmin channel list -o 127.0.0.1:26504 --ca-file $FABRIC/demo/config/crypto/ordererOrganizations/example.com/orderers/orderer1.example.com/tls/ca.crt --client-cert $FABRIC/demo/config/crypto/ordererOrganizations/example.com/orderers/orderer1.example.com/tls/server.crt --client-key $FABRIC/demo/config/crypto/ordererOrganizations/example.com/orderers/orderer1.example.com/tls/server.key
+
+osnadmin channel join -o 127.0.0.1:26504 --ca-file $FABRIC/demo/config/crypto/ordererOrganizations/example.com/orderers/orderer1.example.com/tls/ca.crt --client-cert $FABRIC/demo/config/crypto/ordererOrganizations/example.com/orderers/orderer1.example.com/tls/server.crt --client-key $FABRIC/demo/config/crypto/ordererOrganizations/example.com/orderers/orderer1.example.com/tls/server.key --channel-id participation-trophy --config-block $FABRIC/demo/participation-trophy-genesis-block.pb
+
+osnadmin channel remove -o 127.0.0.1:26504 --ca-file $FABRIC/demo/config/crypto/ordererOrganizations/example.com/orderers/orderer1.example.com/tls/ca.crt --client-cert $FABRIC/demo/config/crypto/ordererOrganizations/example.com/orderers/orderer1.example.com/tls/server.crt --client-key $FABRIC/demo/config/crypto/ordererOrganizations/example.com/orderers/orderer1.example.com/tls/server.key --channel-id participation-trophy

@@ -1,0 +1,330 @@
+openapi: 3.0.1
+info:
+  title: Fabric API
+  description: |-
+    Hyperledger Fabric is an enterprise-grade permissioned distributed ledger framework for developing
+    solutions and applications. Its modular and versatile design satisfies a broad range of industry use
+    cases. It offers a unique approach to consensus that enables performance at scale while preserving privacy.
+  license:
+    name: Copyright IBM Corp. All Rights Reserved.
+  version: "2.3"
+servers:
+- url: /v1
+tags:
+- name: channels
+  description: Channel Participation APIs
+- name: operations
+  description: Operations APIs
+paths:
+  /channels:
+    get:
+      tags:
+      - channels
+      summary: Returns the complete list of channels an Ordering Service Node (OSN)
+        has joined.
+      operationId: listChannels
+      responses:
+        "200":
+          description: Successfully retrieved channels.
+          headers:
+            Cache-Control:
+              description: The directives for caching responses
+              style: simple
+              explode: false
+              schema:
+                type: string
+            Content-Type:
+              description: The media type of the resource
+              style: simple
+              explode: false
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/channelList'
+    post:
+      tags:
+      - channels
+      summary: Joins an Ordering Service Node (OSN) to a channel.
+      description: If a channel does not yet exist, it will be created.
+      operationId: joinChannel
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/body'
+        required: true
+      responses:
+        "201":
+          description: Successfully joined channel.
+          headers:
+            Content-Type:
+              description: The media type of the resource
+              style: simple
+              explode: false
+              schema:
+                type: string
+            Location:
+              description: The URL to redirect a page to
+              style: simple
+              explode: false
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/channelInfo'
+        "400":
+          description: Cannot join channel.
+          content: {}
+        "403":
+          description: The client is trying to join the system-channel that does not
+            exist, but application channels exist.
+          content: {}
+        "405":
+          description: |
+            The client is trying to join an app-channel, but the system channel exists.
+            The client is trying to join an app-channel that exists, but the system channel does not.
+            The client is trying to join the system-channel, and it exists.
+          content: {}
+        "409":
+          description: The client is trying to join a channel that is currently being
+            removed.
+          content: {}
+        "500":
+          description: Removal of channel failed.
+          content: {}
+  /channels/{channelID}:
+    get:
+      tags:
+      - channels
+      summary: Returns detailed channel information for a specific channel Ordering
+        Service Node (OSN) has joined.
+      operationId: listChannel
+      parameters:
+      - name: channelID
+        in: path
+        description: Channel ID
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      responses:
+        "200":
+          description: Successfully retrieved channel.
+          headers:
+            Cache-Control:
+              description: The directives for caching responses
+              style: simple
+              explode: false
+              schema:
+                type: string
+            Content-Type:
+              description: The media type of the resource
+              style: simple
+              explode: false
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/channelInfo'
+    delete:
+      tags:
+      - channels
+      summary: Removes an Ordering Service Node (OSN) from a channel.
+      operationId: removeChannel
+      parameters:
+      - name: channelID
+        in: path
+        description: Channel ID
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      responses:
+        "204":
+          description: Successfully removed channel.
+          content: {}
+        "400":
+          description: Bad request.
+          content: {}
+        "404":
+          description: The channel does not exist.
+          content: {}
+        "405":
+          description: The system channel exists, removal is not allowed.
+          content: {}
+        "409":
+          description: The channel is pending removal.
+          content: {}
+  /healthz:
+    get:
+      tags:
+      - operations
+      summary: Retrieves all registered health checkers for the process.
+      operationId: healthz
+      responses:
+        "200":
+          description: Ok.
+          content: {}
+        "503":
+          description: Service unavailable.
+          content: {}
+  /logspec:
+    get:
+      tags:
+      - operations
+      summary: Retrieves the active logging spec for a peer or orderer.
+      operationId: logspecget
+      responses:
+        "200":
+          description: Ok.
+          content: {}
+    put:
+      tags:
+      - operations
+      summary: Updates the active logging spec for a peer or orderer.
+      operationId: logspecput
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/body_1'
+        required: true
+      responses:
+        "204":
+          description: No content.
+          content: {}
+        "400":
+          description: Bad request.
+          content: {}
+  /metrics:
+    get:
+      tags:
+      - operations
+      operationId: metrics
+      responses:
+        "200":
+          description: Ok.
+          content: {}
+  /version:
+    get:
+      tags:
+      - operations
+      summary: Returns the orderer or peer version and the commit SHA on which the
+        release was created.
+      operationId: version
+      responses:
+        "200":
+          description: Ok.
+          content: {}
+components:
+  schemas:
+    ChannelInfoShort:
+      title: ChannelInfoShort carries a short info of a single channel.
+      type: object
+      properties:
+        name:
+          type: string
+          description: The channel name.
+          x-go-name: Name
+        url:
+          type: string
+          description: 'The channel relative URL (no Host:Port, only path), e.g.:
+            "/participation/v1/channels/my-channel".'
+          x-go-name: URL
+      example:
+        name: name
+        url: url
+      x-go-package: github.com/hyperledger/fabric/orderer/common/types
+    ConsensusRelation:
+      title: ConsensusRelation represents the relationship between the orderer and
+        the channel's consensus cluster.
+      type: string
+      x-go-package: github.com/hyperledger/fabric/orderer/common/types
+    Status:
+      type: string
+      description: |-
+        Status represents the degree by which the orderer had caught up with the rest of the cluster after joining the
+        channel (either as a consenter or a follower).
+      x-go-package: github.com/hyperledger/fabric/orderer/common/types
+    channelInfo:
+      title: ChannelInfo carries the response to an HTTP request to List a single
+        channel.
+      type: object
+      properties:
+        consensusRelation:
+          $ref: '#/components/schemas/ConsensusRelation'
+        height:
+          type: integer
+          description: Current block height.
+          format: uint64
+          x-go-name: Height
+        name:
+          type: string
+          description: The channel name.
+          x-go-name: Name
+        status:
+          $ref: '#/components/schemas/Status'
+        url:
+          type: string
+          description: 'The channel relative URL (no Host:Port, only path), e.g.:
+            "/participation/v1/channels/my-channel".'
+          x-go-name: URL
+      description: This is marshaled into the body of the HTTP response.
+      example:
+        name: name
+        consensusRelation: consensusRelation
+        url: url
+        height: 0
+        status: status
+      x-go-name: ChannelInfo
+      x-go-package: github.com/hyperledger/fabric/orderer/common/types
+    channelList:
+      title: ChannelList carries the response to an HTTP request to List all the channels.
+      type: object
+      properties:
+        channels:
+          type: array
+          description: Application channels only, nil or empty if no channels defined.
+          items:
+            $ref: '#/components/schemas/ChannelInfoShort'
+          x-go-name: Channels
+        systemChannel:
+          $ref: '#/components/schemas/ChannelInfoShort'
+      description: This is marshaled into the body of the HTTP response.
+      example:
+        channels:
+        - name: name
+          url: url
+        - name: name
+          url: url
+        systemChannel: null
+      x-go-name: ChannelList
+      x-go-package: github.com/hyperledger/fabric/orderer/common/types
+    spec:
+      type: object
+      properties:
+        spec:
+          type: string
+          x-go-name: Spec
+      x-go-name: LogSpec
+      x-go-package: github.com/hyperledger/fabric/common/flogging/httpadmin
+    body:
+      required:
+      - configBlock
+      properties:
+        configBlock:
+          type: string
+    body_1:
+      required:
+      - payload
+      properties:
+        payload:
+          type: string
+          description: The payload must consist of a single attribute named spec.
+x-original-swagger-version: "2.0"
